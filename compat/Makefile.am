@@ -1,6 +1,6 @@
 
 if WANT_JANSSON
-SUBDIRS	= jansson
+SUBDIRS	= jansson ruli
 else
 SUBDIRS	=
 endif

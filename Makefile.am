@@ -5,11 +5,13 @@ else
 JANSSON_INCLUDES=
 endif
 
+RULI_INCLUDES= -I$(top_srcdir)/compat/ruli/src
+
 EXTRA_DIST	= example-cfg.json nomacro.pl
 
-SUBDIRS		= compat
+SUBDIRS		= compat compat/ruli
 
-INCLUDES	= $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES)
+INCLUDES	= $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(RULI_INCLUDES)
 
 bin_PROGRAMS	= minerd
 
@@ -24,7 +26,7 @@ minerd_SOURCES	= elist.h \
 		  xmalloc.c
 
 minerd_LDFLAGS	= $(PTHREAD_FLAGS) 
-minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -loop compat/ruli/src/libruli.a
 minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@
 minerd_CFLAGS   = -std=gnu11 -O3 -march=native -fPIC -flto
 

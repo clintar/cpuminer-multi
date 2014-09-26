@@ -1,0 +1,57 @@
+#
+# $Id: RELEASING,v 1.3 2005/07/20 12:21:11 evertonm Exp $
+#
+
+a) Get CVS snapshot:
+
+CVS snapshot is ruli
+
+b) Create a clean source tree:
+
+cp -a ruli ruli-<version>
+cd ruli-<version>
+make release-clean
+cd ..
+tar czf ruli_<version>.orig.tar.gz ruli-<version>
+rm -r ruli-<version>
+
+c) Add 'debian' directory:
+
+tar xzf ruli_<version>.orig.tar.gz
+cd ruli-<version>
+cp -a ../ruli/debian .
+rm -r `find debian -name CVS`
+(remove stale CVS dir: rm -r debian/libruli3-dev)
+
+d) Tweak things for Debian:
+
+Add DESTDIR to src/Makefile, sample/Makefile
+Remove OOP_* from src/Makefile, sample/Makefile
+Remove -Werror from src/Makefile
+
+e) Update Debian changelog:
+
+cd debian
+dch -i
+cd ..
+
+f) Create package:
+
+make dpkg
+
+g) Test package:
+
+cd ..
+linda -i *.dsc
+linda -i *.changes
+lintian *.dsc
+lintian *.changes
+dpkg -i *.deb
+dpkg -P libruli-bin libruli4 libruli4-dev
+
+h) Install previous package
+
+i) Upgrade to current package
+
+j) Remove current package
+

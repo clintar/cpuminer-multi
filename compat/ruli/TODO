@@ -1,0 +1,448 @@
+#
+# $Id: TODO,v 1.138 2005/12/07 21:16:18 evertonm Exp $
+#
+
+  Legend:
+    - = todo
+    / = in progress
+    + = done
+
+......................................................................
+
+Wishlist:
+
+- Would handling of exceptional events on sockets add any benefit?
+
+- Actually fix the FIXMEs in the code.
+
+- Non-standard HTTP with SRV/_http._tcp.domain, A/domain?
+
+- Use garbage collection for memory management? 
+  As build-time option?
+  Keep the application in charge of it?
+  Anyone?
+
+- Launch auxiliary queries to follow CNAME chains? I believe we
+  don't need to use extra queries for CNAME chains, because the
+  recursive name server is supposed to fetch the whole chain
+  for us. Not sure, though.
+
+- Use round-trip times to better distribute load among recursive
+  name servers?
+
+- Add an reverse-lookup layer to the raw resolver in order to
+  fetch IN PTR records across CNAME chains?
+
+- Add a CNAME-aware layer to the raw resolver in order to
+  fetch arbitrary record types across CNAME chains?
+
+- ruli_txt: Recognize rfc1035-quoting (section 5.1)
+            slash"\.".org
+            slash"\046".org
+            This will require a variable max-length for txt dst 
+            decoding buffer.
+            Relatively hard at first.
+
+- Use EDNS0 to support larger UDP segments.
+
+- Special behavior (smtp, http, ...) under ruli_getaddrinfo().
+
+- check packaging against Debian Library Packaging Guide:
+  http://www.netfort.gr.jp/~dancer/column/libpkg-guide/
+
+
+				 -x-
+
+Changes:
+
+......................................................................
+
+0.37
+
+- New: Autoconf/automake/libtool support.
+
+- Rgr: Regression test cases for special SRV behavior.
+       (SMTP, HTTP, ...)
+
+- Rgr: Basic regression test cases for synchronous API.
+
+- New: Add optional logging for RULI major events and/or errors.
+
+- New: Permit the user to limit the number of concurrent queries
+       thus preventing accidental overload of the library.
+
+- New: ruli_sync: Periodically (or on usage threshold)
+       reload config: /etc/resolv.conf.
+
+- New: ruli_res: Periodically (or on usage threshold)
+       refresh config: nameserver list & search list.
+
+
+......................................................................
+
+0.36
+
++ Fix: Solaris 9 port.
+
+
+......................................................................
+
+0.35
+
++ New: Sample code for runtime detection (dlopen()) of libruli.so.
+       (see sample/run_getaddrinfo.c for example of runtime code)
+
+
+......................................................................
+
+0.34
+
++ New: Mikael Magnusson patch to allow CNAME in SRV targets.
+
++ Fix: Added 'rfc3484' resolver option to sample programs.
+
++ Fix: Safer sockaddr structure for recvfrom().
+
+
+......................................................................
+
+0.33
+
++ Fix: ruli_getaddrinfo: Mikael Magnusson patch to respect address
+       family specified in hints.
+
++ Fix: Support for RFC3484 - destination address selection.
+
++ New: SONAME increased to reflect ABI change.
+
+
+......................................................................
+
+0.32
+
++ Fix: Sort MX records by priority.
+
++ Fix: Sort addresses by family, delivering IPv6 first, if any.
+
++ Fix: ruli_http: Support for specific srv-based queries for http.
+
++ New: Binding for Lua language.
+
+
+......................................................................
+
+0.31
+
++ Cln: Minor clean-ups.
+
++ New: Perl module 0.02: namespace "Net::RULI".
+
++ New: Java native interface.
+
+
+......................................................................
+
+0.30
+
++ Fix: Compilation fix for gcc 3.4.
+
++ Fix: Better error code reporting for Guile extension.
+
++ Fix: Solaris port.
+
+
+......................................................................
+
+0.29
+
++ New: Guile extension.
+
+
+......................................................................
+
+0.28
+
++ Cln: Use ruli_host for all address lookups.
+       + walk: + Use ruli_host for address lookups.
+               + Major clean-up.
+       + fall: + Use ruli_host for address lookups.
+               + Major clean-up.
+
++ Fix: Increase SONAME due to ABI changes (changed struct's members).
+       API remains though.
+
+
+......................................................................
+
+0.27
+
++ Fix: Removed INSTALL_DIR from compiler/linker search path.
+
++ New: Resolver options.
+       + uri_port
+       + nowalk
+       + nofall
+
++ New: ruli_host: CNAME-aware, family-agnostic, address lookup layer.
+
+
+......................................................................
+
+0.26
+
++ Fix: ruli_smtp: Perform extra "walk" queries for MX exchange which
+       has no corresponding address record in the additional section?
+       Shouldn't MX additional processing handle this for us in the
+       recursive resolver? It seems MX TTL > MX target TTL partially
+       defeats "MX additional processing", unfortunately. Thus we
+       actually need to to work-around this issue by issuing queries
+       for address records.
+
++ New: Symbol versioning in shared library.
+
++ Fix: Solaris port.
+
++ Fix: ruli_addr: Better IPv6 print helper.
+
++ Cln: Prefix internal non-static functions with '_'.
+
+
+......................................................................
+
+0.25
+
++ Fix: ruli_srv: Perform 2 separate queries for addresses (IN_AAAA,
+       IN_A), instead of a single IN_ANY query.
+       + walk_query
+       + fall_query
+
++ Fix: Debian compiler warning for m68k, powerpc, hppa.
+
+
+......................................................................
+
+0.24
+
++ New: IPv6 support: AAAA resource records.
+
++ Fix: Better portability for ruli_getaddrinfo().
+
+
+......................................................................
+
+0.23
+
++ Fix: Add IPv6 support for 'tools'.
+
++ Fix: Perl binding updated to new address-family-aware API.
+
++ Fix: PHP binding updated to new address-family-aware API.
+
++ Fix: Incorrect pointer arithmetic in ruli_getaddrinfo().
+
+
+......................................................................
+
+0.22
+
++ New: IPv6 support: PF_INET6 protocol family as transport.
+
++ New: Change fsm to use IPv6 UDP sockets. TCP is for free.
+
++ New: load IPv6 nameserver addresses.
+
++ New: API changed to support IPv6.
+
++ New: ruli_inet6_ntoa(): detect valid IPv6 address.
+
++ New: Added ruliwrap wrapper (from http://weinholt.se/hacks/)
+       as ruli_getaddrinfo().
+
+
+......................................................................
+
+0.21
+
++ Fix: 'class' replaced by 'qclass' to avoid clash with c++ keyword.
+
++ Cln: Better support for Debian packaging.
+
++ Cln: Better portability.
+
+
+......................................................................
+
+0.20
+
++ New: Example programs for the Perl module.
+
++ New: Minimal man pages for sample programs.
+
++ New: Debian binary package 'libruli-bin' for sample programs.
+
+
+......................................................................
+
+0.19
+
++ New: Binding for Perl.
+
+
+......................................................................
+
+0.18
+
++ Cln: More friendly to Debian packaging.
+
++ New: Added bogus manpage for Debian.
+
++ New: Added 'debian' directory for package debianization.
+
++ Fix: Retrieve MX Exchange (in place of MX Owner) as SRV target.
+
++ New: Binding for PHP4.
+
+
+......................................................................
+
+0.17
+
++ Cln: Compatibility with newer gcc.
+
++ Fix: Better handling of remotely closed connection.
+
++ New: Better internal array structure.
+
+
+......................................................................
+
+0.16
+
++ Fix: Default config unloader was being improperly called.
+
++ New: Return priority/weight values in high-level interfaces.
+
++ New: Non-standard SMTP with SRV/_smtp._tcp.domain, MX/domain, 
+       A/domain.
+
+
+......................................................................
+
+0.15
+
++ Fix: Server round-robin scanning is reset for every suffix of the
+       search list.
+
++ Cln: More ISAAC name space clean-ups.
+
++ New: ruli_search: Simpler, higher-level API for SRV queries.
+       Previous RULI's standard SRV API (ruli_srv) seemed too
+       complex for simple queries with trivial behavior.
+
++ Fix: Sample tools have been using incorrect buffer sizes for
+       domain names in textual form. This limited the maximum
+       domain name length to 252 characters instead of 253.
+
++ New: Sample programs under 'sample' directory show how to
+       write SRV-aware applications.
+
++ Cln: ruli_sync based on ruli_search.
+
++ New: ruli_search: Higher-level API for easy resolver creation.
+
++ Fix: Regression errors.
+
+
+......................................................................
+
+0.14
+
++ ruli_txt: Clean-up label handling API: ruli_txt.
+
++ ruli_res: Implement search list.
+
++ ruli_sync: Use a search list as defined by
+  'search'/'domain' clauses of /etc/resolv.conf.
+
++ Code clean-up.
+
+
+......................................................................
+
+0.13
+
++ ruli_rand: Use random generator with explicit state: ISAAC.
+
++ Clean up of ISAAC name space.
+
++ Follow CNAME chains while falling back to IN A queries.
+  Would require loop detection or limit the max chain depth.
+
++ Basic regression test cases for SRV API.
+
++ Clean up of obsolete domain comparisson code.
+
++ Fixed possible memory leaking in fallback answer processing.
+
++ Fixed possible memory leaking in "walk" answer processing.
+
+
+......................................................................
+
+0.12
+
++ Code clean-up.
+
++ Comprehensive, automated regression test cases for underlying
+  resolver.
+
++ Stricter (paranoid) checking of servers answers for flags, opcode.
+
+
+......................................................................
+
+0.11
+
++ ruli_srv: Better RCODE kind semantics.
+
++ Report timeout (alarm) condition on sample tools.
+
++ Checking of target-walk and fallback answer IN A records.
+
++ Code clean-up.
+
++ Stricter compiler warnings.
+
++ Minor bugfix: ruli_srv_t.qdomain_len was not being initialized.
+
++ ruli_srv: Check owner match.
+
++ ruli_txt: Detect name compression loop.
+
+
+......................................................................
+
+0.10
+
++ Return error when fallback IN A query can't find any
+  address.
+
++ Portability fixes for Solaris 7.
+
++ Synchronization with HTML documentation.
+
++ syncsolver: Minor fix for stdin parsing.
+
+
+......................................................................
+
+0.9
+
++ Fixed assert() triggered by late UDP answers reaching
+  us when we have switched to another state due to timeout.
+
++ Better checks of function return results for ruli_list_new(),
+  ruli_list_parse(), ruli_list_push().
+      
+				 -x-
+
