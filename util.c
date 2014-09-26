@@ -801,7 +801,7 @@ bool stratum_connect(struct stratum_ctx *sctx, const char *url)
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
     curl_easy_setopt(curl, CURLOPT_URL, sctx->curl_url);
     curl_easy_setopt(curl, CURLOPT_FRESH_CONNECT, 1);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, sctx->curl_err_str);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1);

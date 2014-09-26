@@ -43,10 +43,16 @@
 #include "compat.h"
 #include "miner.h"
 #include "xmalloc.h"
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <compat/ruli/src/ruli.h>
 
 #define PROGRAM_NAME		"minerd"
 #define LP_SCANTIME		60
 #define JSON_BUF_LEN 345
+#include <assert.h>
+const int INBUFSZ = 1024;
 
 #ifdef __linux /* Linux specific policy and affinity management */
 #include <sched.h>
@@ -125,7 +131,7 @@ bool use_syslog = false;
 static bool opt_background = false;
 static bool opt_quiet = false;
 static int opt_retries = -1;
-static int opt_fail_pause = 10;
+static int opt_fail_pause = 1;
 bool jsonrpc_2 = false;
 int opt_timeout = 0;
 static int opt_scantime = 5;
@@ -1833,15 +1839,222 @@ out: if (val)
 static void *stratum_thread(void *userdata) {
     struct thr_info *mythr = userdata;
     char *s;
-
-    stratum.url = tq_pop(mythr->q, NULL );
+	char *original_addr;
+	original_addr = tq_pop(mythr->q, NULL );
+    stratum.url = strdup(original_addr);
     if (!stratum.url)
         goto out;
     applog(LOG_INFO, "Starting Stratum on %s", stratum.url);
 
     while (1) {
         int failures = 0;
+		stratum.url = strdup(original_addr);
 
+if(strstr(stratum.url,"._tcp."))
+	{
+		printf("URL: %s\n",stratum.url);
+		//xasprintf(stratum.url, "http%s", strstr(stratum.url, "._tcp://"));
+
+		const char *fullname = strpbrk(stratum.url, "://") + 3;
+		char *useaddress;
+		char *useport;
+
+//		printf("FULLNAME: %s\n",fullname);
+		int  name_len = strlen(fullname);
+	  char name[name_len + 1];
+
+	  char *txt_service;
+	  int  txt_service_len;
+	  char *txt_domain;
+	  int  txt_domain_len;
+
+	  memcpy(name, fullname, name_len + 1);
+
+	  /*
+	   * Split full domain name in service + domain
+	   * Example: _http._tcp.domain => _http._tcp + domain
+	   */
+
+	  {
+		int  name_len  = strlen(name);
+		char *past_end = name + name_len;
+		char *i        = name;
+
+		assert(name_len > 0);
+		assert(name_len < INBUFSZ);
+
+		if (*i != '_') {
+		  fprintf(stderr, 
+			  " solve(): could not match _service\n"
+			  );
+
+		  return;
+		}
+
+		/*
+		 * Find domain
+		 */
+		for (; i < past_end; ++i) {
+		  if (*i == '.') {
+		++i;
+		if (i < past_end) {
+		  if (*i != '_')
+			break;
+		}
+		  }
+		}
+
+		if (i >= past_end) {
+		  fprintf(stderr, 
+			  " solve(): could not split service/domain\n"
+			  );
+
+		  return;
+		}
+
+		txt_service     = name;
+		txt_service_len = i - name - 1;
+		txt_domain      = i;
+		txt_domain_len  = past_end - i;
+
+		txt_service[txt_service_len] = '\0';
+	  }
+
+	  /*
+	   * Submit query
+	   */
+	  {
+		const int BUFSZ = RULI_LIMIT_LABEL_HIGH + 1; /* = 64 */
+		struct addrinfo hints;
+		struct addrinfo *ai_res;
+		char service[BUFSZ];
+		struct protoent *pe;
+		char *i, *j;
+		int result;
+
+		/*
+		 * from: txt_service = "_smtp._tcp"
+		 * make: service = "smtp"
+		 */
+		i = txt_service;
+		assert(*i == '_');
+		++i;
+		assert(i < (txt_service + txt_service_len));
+		j = (char *) memchr(i, '.', txt_service_len - (i - txt_service));
+		assert(j);
+		assert(*j == '.');
+		memcpy(service, i, j - i);
+		service[j - i] = '\0';
+
+		/*
+		 * j = "._tcp";
+		 */
+		if (!strcasecmp(j, "._tcp"))
+		  hints.ai_socktype = SOCK_STREAM;
+		else if (!strcasecmp(j, "._udp"))
+		  hints.ai_socktype = SOCK_DGRAM;
+		else {
+		  printf("%s bad-socket-type: %s\n", fullname, j);
+		  return;
+		}
+
+		j += 2;
+		assert(j < (txt_service + txt_service_len));
+		/*
+		 * j = "tcp";
+		 */
+
+		pe = getprotobyname(j);
+		if (false && !pe) {
+		  printf("%s bad-protocol: %s\n", fullname, j);
+		  return;
+		}
+
+		hints.ai_protocol = pe->p_proto;
+		hints.ai_flags = AI_CANONNAME;
+		hints.ai_family = PF_UNSPEC;
+		hints.ai_addrlen = 0;
+		hints.ai_addr = 0;
+		hints.ai_canonname = 0;
+
+		result = ruli_getaddrinfo(txt_domain, service, &hints, &ai_res);
+		if (result) {
+		  printf("%s getaddrinfo-failed: %s\n", fullname, gai_strerror(result));
+		  return;
+		}
+
+		/* show addresses */
+		{
+		  struct addrinfo *ai;
+		  for (ai = ai_res; ai && !stratum.curl; ai = ai->ai_next ) {
+
+		printf(fullname);
+
+		switch (ai->ai_family) {
+		case PF_INET:
+		  {
+			struct sockaddr_in *sa = (struct sockaddr_in *) ai->ai_addr;
+
+			assert(sizeof(*sa) <= ai->ai_addrlen);
+
+			printf(" canon=%s port=%d IPv4/%s\n",
+			   ai->ai_canonname, ntohs(sa->sin_port),
+			   inet_ntoa(sa->sin_addr));
+
+				useaddress = xstrdup(ai->ai_canonname);
+				sprintf(stratum.url,"stratum+tcp://%s:%d", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
+				printf("Using: %s\n",stratum.url);
+
+		  }
+		  break;
+
+		case PF_INET6:
+		  {
+			struct sockaddr_in6 *sa = (struct sockaddr_in6 *) ai->ai_addr;
+
+			assert(sizeof(*sa) <= ai->ai_addrlen);
+
+			printf(" canon=%s port=%d IPv6/", 
+			   ai->ai_canonname, ntohs(sa->sin6_port));
+			ruli_inet6_print(stdout, &sa->sin6_addr);
+			printf("\n");
+		  }
+		  break;
+
+		default:
+		  assert(0);
+		}
+
+            pthread_mutex_lock(&g_work_lock);
+            g_work_time = 0;
+            pthread_mutex_unlock(&g_work_lock);
+            restart_threads();
+
+            if (!stratum_connect(&stratum, stratum.url)
+                || !stratum_subscribe(&stratum)
+                || !stratum_authorize(&stratum, rpc_user, rpc_pass)) {
+                    stratum_disconnect(&stratum);
+                    if (opt_retries >= 0 && ++failures > opt_retries) {
+                        applog(LOG_ERR, "...terminating workio thread");
+                        tq_push(thr_info[work_thr_id].q, NULL );
+                        goto out;
+                    }
+                    applog(LOG_ERR, "...retry after %d seconds", opt_fail_pause);
+                    sleep(opt_fail_pause);
+            }
+        
+		  } /* scan list */
+
+		} /* show addresses */
+
+		ruli_freeaddrinfo(ai_res);
+
+	  } /* submit query */
+	  
+	}
+        
+else
+{
         while (!stratum.curl) {
             pthread_mutex_lock(&g_work_lock);
             g_work_time = 0;
@@ -1861,7 +2074,7 @@ static void *stratum_thread(void *userdata) {
                     sleep(opt_fail_pause);
             }
         }
-
+}
         if(need_to_rerequest_job)
         {
             applog(LOG_ERR, "Re-requesting job...");
