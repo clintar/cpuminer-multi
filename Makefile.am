@@ -9,7 +9,7 @@ RULI_INCLUDES= -I$(top_srcdir)/compat/ruli/src
 
 EXTRA_DIST	= example-cfg.json nomacro.pl
 
-SUBDIRS		= compat compat/ruli
+SUBDIRS		= compat compat/ruli/src
 
 INCLUDES	= $(PTHREAD_FLAGS) -fno-strict-aliasing $(JANSSON_INCLUDES) $(RULI_INCLUDES)
 
